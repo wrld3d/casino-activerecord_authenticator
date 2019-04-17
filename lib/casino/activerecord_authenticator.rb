@@ -2,6 +2,7 @@ require 'active_record'
 require 'unix_crypt'
 require 'bcrypt'
 require 'phpass'
+require 'digest'
 
 class CASino::ActiveRecordAuthenticator
 
@@ -65,15 +66,11 @@ class CASino::ActiveRecordAuthenticator
 
   def valid_password?(password, password_from_database)
     return false if password_from_database.blank?
-    magic = password_from_database.split('$')[1]
-    case magic
-    when /\A2a?\z/
-      valid_password_with_bcrypt?(password, password_from_database)
-    when /\AH\z/, /\AP\z/
-      valid_password_with_phpass?(password, password_from_database)
-    else
-      valid_password_with_unix_crypt?(password, password_from_database)
-    end
+    valid_password_with_md5?(password, password_from_database)
+  end
+
+  def valid_password_with_md5?(password, password_from_database)
+    Digest::MD5.hexdigest(password) == password_from_database
   end
 
   def valid_password_with_bcrypt?(password, password_from_database)
