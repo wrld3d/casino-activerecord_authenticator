@@ -66,11 +66,28 @@ class CASino::ActiveRecordAuthenticator
 
   def valid_password?(password, password_from_database)
     return false if password_from_database.blank?
-    valid_password_with_md5?(password, password_from_database)
+    
+    if valid_password_with_md5?(password, password_from_database)
+      true
+    elsif ENV['PASSWORD_SALT'] != nil && valid_password_with_salted_md5?(password, password_from_database, ENV['PASSWORD_SALT'])
+      true
+    elsif valid_password_with_bcrypt?(password, password_from_database)
+      true
+    elsif valid_password_with_unix_crypt?(password, password_from_database)
+      true
+    elsif valid_password_with_phpass?(password, password_from_database)
+      true
+    else
+      false
+    end
   end
 
   def valid_password_with_md5?(password, password_from_database)
     Digest::MD5.hexdigest(password) == password_from_database
+  end
+
+  def valid_password_with_salted_md5?(password, password_from_database, salt)
+    Digest::MD5.hexdigest("#{salt}#{password}") == password_from_database
   end
 
   def valid_password_with_bcrypt?(password, password_from_database)
